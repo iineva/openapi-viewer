@@ -42,4 +42,33 @@ describe('OpenAPI utilities', () => {
     expect(searchOperations(operations, 'PETS')).toHaveLength(2)
     expect(searchOperations(operations, 'GET')).toHaveLength(1)
   })
+
+  it('searches parameter and nested schema field descriptions', () => {
+    const operations = getOperations({
+      ...sampleDocument,
+      paths: {
+        '/members': {
+          post: {
+            parameters: [{ description: 'Tenant routing identifier', in: 'header', name: 'X-Tenant' }],
+            requestBody: {
+              content: {
+                'application/json': {
+                  schema: {
+                    properties: {
+                      displayName: { description: 'The public profile name', type: 'string' },
+                    },
+                    type: 'object',
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    })
+
+    expect(searchOperations(operations, 'tenant routing')).toHaveLength(1)
+    expect(searchOperations(operations, 'public profile')).toHaveLength(1)
+    expect(searchOperations(operations, 'displayname')).toHaveLength(1)
+  })
 })

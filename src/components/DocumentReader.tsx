@@ -1,5 +1,6 @@
 import { Alert, Anchor, Button, Collapse, Descriptions, Divider, Empty, Space, Table, Tag, Typography } from 'antd'
 import { useState } from 'react'
+import JsonCodeBlock from './JsonCodeBlock'
 import RequestDrawer from './RequestDrawer'
 import type { ApiDocument, Operation } from '../types/openapi'
 
@@ -29,7 +30,7 @@ function responseRows(operation: Operation) {
 }
 
 function RawValue({ value }: { value: unknown }) {
-  return <pre>{JSON.stringify(value, null, 2) ?? String(value)}</pre>
+  return <JsonCodeBlock value={value} />
 }
 
 function ResponseDetails({ response, status }: { response: unknown; status: string }) {
@@ -156,7 +157,7 @@ export default function DocumentReader({ document, operations, selectedOperation
                 <section className="schema-block">
                   <Typography.Title level={4}>Request body</Typography.Title>
                   {details(requestBody.description) ? <Typography.Paragraph>{details(requestBody.description)}</Typography.Paragraph> : null}
-                  <pre>{JSON.stringify(requestBody.content ?? {}, null, 2)}</pre>
+                  <JsonCodeBlock value={requestBody.content ?? {}} />
                 </section>
               ) : null}
 
@@ -193,13 +194,13 @@ export default function DocumentReader({ document, operations, selectedOperation
         <section className="schema-block" id="schemas">
           <Divider />
           <Typography.Title level={2}>Schemas</Typography.Title>
-          <pre>{JSON.stringify(schemas, null, 2)}</pre>
+          <JsonCodeBlock value={schemas} />
         </section>
       ) : null}
       {securitySchemes ? (
         <section className="schema-block" id="security-schemes">
           <Typography.Title level={2}>Authentication</Typography.Title>
-          <pre>{JSON.stringify(securitySchemes, null, 2)}</pre>
+          <JsonCodeBlock value={securitySchemes} />
         </section>
       ) : null}
       {requestOperation ? <RequestDrawer key={requestOperation.key} onClose={() => setRequestOperation(undefined)} open operation={requestOperation} /> : null}

@@ -55,7 +55,24 @@ export function searchOperations(operations: Operation[], term: string): Operati
     operation.definition.summary,
     operation.definition.operationId,
     ...(operation.definition.tags ?? []),
+    ...collectSearchTerms(operation.parameters),
+    ...collectSearchTerms(operation.definition),
   ].some((value) => value?.toLocaleLowerCase().includes(query)))
+}
+
+function collectSearchTerms(value: unknown, seen = new WeakSet<object>()): string[] {
+  if (typeof value === 'string') {
+    return [value]
+  }
+  if (!value || typeof value !== 'object') {
+    return []
+  }
+  if (seen.has(value)) {
+    return []
+  }
+  seen.add(value)
+
+  return Object.entries(value).flatMap(([key, nested]) => [key, ...collectSearchTerms(nested, seen)])
 }
 
 function mergeParameters(pathParameters?: Parameter[], operationParameters?: Parameter[]): Parameter[] {

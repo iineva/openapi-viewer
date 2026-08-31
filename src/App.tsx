@@ -151,8 +151,8 @@ export default function App() {
       </Layout.Header>
       {error ? <Alert banner closable message={error} onClose={() => setError(undefined)} type="error" /> : null}
       <Layout className="viewer-layout" hasSider={!compact}>
-        {!compact ? <Layout.Sider className="history-rail" theme="light" width={244}>{historyPanel}</Layout.Sider> : null}
-        {!compact ? <Layout.Sider className="navigation-rail" theme="light" width={306}>{operationNavigation}</Layout.Sider> : null}
+        {!compact ? <Layout.Sider className="history-rail" theme="light" width={224}>{historyPanel}</Layout.Sider> : null}
+        {!compact ? <Layout.Sider className="navigation-rail" theme="light" width={272}>{operationNavigation}</Layout.Sider> : null}
         <Layout.Content className="reader-content"><DocumentReader document={activeDocument?.specification} onSelect={handleSelect} operations={operations} selectedOperationKey={selectedOperationKey} /></Layout.Content>
       </Layout>
       <Drawer onClose={() => setHistoryOpen(false)} open={historyOpen} size="default" title="Document history">{historyPanel}</Drawer>

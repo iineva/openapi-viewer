@@ -27,4 +27,19 @@ describe('OperationNavigation', () => {
     expect(screen.queryByText('/users')).not.toBeInTheDocument()
     expect(screen.getByText('/pets')).toBeInTheDocument()
   })
+
+  it('keeps a long route readable without expanding the navigation item', () => {
+    const longPath = '/bagan-api/member/v2/getMembersPersonalizationFilled/with-a-long-resource-name'
+    const longOperation: Operation = {
+      definition: { summary: 'Long route', tags: ['gateway'] },
+      key: `get-${longPath}`,
+      method: 'get',
+      parameters: [],
+      path: longPath,
+    }
+
+    render(<OperationNavigation onSelect={() => undefined} operations={[longOperation]} />)
+
+    expect(screen.getByTitle(longPath)).toHaveTextContent(longPath)
+  })
 })

@@ -73,7 +73,7 @@ export default function OperationNavigation({ operations, selectedOperationKey, 
                   type="text"
                 >
                   <span className={`method method-${operation.method}`}>{operation.method.toUpperCase()}</span>
-                  <span>{operation.path}</span>
+                  <span className="operation-path" title={operation.path}>{operation.path}</span>
                 </Button>
               ),
             })),
