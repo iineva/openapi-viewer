@@ -1,5 +1,5 @@
 import { SearchOutlined } from '@ant-design/icons'
-import { Button, Empty, Input, Tree, Typography } from 'antd'
+import { Button, Collapse, Empty, Input, Typography } from 'antd'
 import { useEffect, useMemo, useState } from 'react'
 import { searchOperations } from '../lib/openapi'
 import type { Operation } from '../types/openapi'
@@ -59,21 +59,18 @@ export default function OperationNavigation({ operations, selectedOperationKey, 
         value={query}
       />
       {groups.length ? (
-        <Tree
-          blockNode
-          className="operation-tree"
-          expandedKeys={expandedKeys}
-          onExpand={(keys) => setExpandedKeys(keys.map(String))}
-          selectable={false}
-          treeData={groups.map((group) => ({
+        <Collapse
+          activeKey={expandedKeys}
+          className="operation-groups"
+          ghost
+          items={groups.map((group) => ({
             key: `tag-${group.tag}`,
-            title: group.tag,
-            children: group.operations.map((operation) => ({
-              key: operation.key,
-              title: (
+            label: group.tag,
+            children: group.operations.map((operation) => (
                 <Button
                   aria-current={selectedOperationKey === operation.key ? 'page' : undefined}
                   className="operation-link"
+                  key={operation.key}
                   onClick={() => onSelect(operation)}
                   type="text"
                 >
@@ -83,9 +80,9 @@ export default function OperationNavigation({ operations, selectedOperationKey, 
                     {operationDescription(operation) ? <span className="operation-description" title={operationDescription(operation)}>{operationDescription(operation)}</span> : null}
                   </span>
                 </Button>
-              ),
-            })),
+            )),
           }))}
+          onChange={(keys) => setExpandedKeys(Array.isArray(keys) ? keys.map(String) : [String(keys)])}
         />
       ) : (
         <Empty description="No matching endpoints" image={Empty.PRESENTED_IMAGE_SIMPLE} />
