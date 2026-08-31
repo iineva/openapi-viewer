@@ -16,7 +16,8 @@ interface ResponseDetails {
 }
 
 function initialValues(operation: Operation): RequestValues {
-  const values: RequestValues = { body: requestBodyExample(operation), headers: {}, path: {}, query: {} }
+  const requestBody = requestBodyExample(operation)
+  const values: RequestValues = { body: requestBody.body, bodyMediaType: requestBody.mediaType, headers: {}, path: {}, query: {} }
   for (const parameter of operation.parameters) {
     if (parameter.in === 'path') values.path[parameter.name] = ''
     if (parameter.in === 'query') values.query[parameter.name] = ''
@@ -25,12 +26,17 @@ function initialValues(operation: Operation): RequestValues {
   return values
 }
 
-function requestBodyExample(operation: Operation): string {
+function requestBodyExample(operation: Operation): { body: string; mediaType?: string } {
   const requestBody = operation.definition.requestBody as { content?: Record<string, { example?: unknown; examples?: Record<string, { value?: unknown }> }> } | undefined
   const content = requestBody?.content
-  const mediaType = content?.['application/json'] ?? Object.values(content ?? {})[0]
-  const example = mediaType?.example ?? Object.values(mediaType?.examples ?? {})[0]?.value
-  return example === undefined ? '' : typeof example === 'string' ? example : JSON.stringify(example, null, 2)
+  const selected = content?.['application/json']
+    ? ['application/json', content['application/json']] as const
+    : Object.entries(content ?? {})[0]
+  const example = selected?.[1].example ?? Object.values(selected?.[1].examples ?? {})[0]?.value
+  return {
+    body: example === undefined ? '' : typeof example === 'string' ? example : JSON.stringify(example, null, 2),
+    mediaType: selected?.[0],
+  }
 }
 
 function displayBody(body: string): string {

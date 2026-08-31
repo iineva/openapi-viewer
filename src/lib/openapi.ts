@@ -18,7 +18,7 @@ export async function parseSpecification(content: string): Promise<ApiDocument> 
   return (result.schema ?? result.specification ?? upgraded) as ApiDocument
 }
 
-export function getOperations(document: ApiDocument): Operation[] {
+export function getOperations(document: ApiDocument, documentUrl?: string): Operation[] {
   return Object.entries(document.paths ?? {}).flatMap(([path, pathItem]) => {
     if (!pathItem || typeof pathItem !== 'object') {
       return []
@@ -36,6 +36,7 @@ export function getOperations(document: ApiDocument): Operation[] {
         path,
         definition: definition as OperationDefinition,
         parameters: mergeParameters(pathItem.parameters, (definition as OperationDefinition).parameters),
+        documentUrl,
         serverUrl: findServerUrl(document, pathItem, definition as OperationDefinition),
       }]
     })

@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import App from './App'
 
@@ -63,7 +63,7 @@ describe('App', () => {
 
     const petsOperation = (await screen.findByText('/pets')).closest('button')
     expect(petsOperation).toHaveTextContent('GET')
-    expect(screen.queryByText('/users')).not.toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByText('/users')).not.toBeInTheDocument())
 
     fireEvent.click(petsOperation!)
 

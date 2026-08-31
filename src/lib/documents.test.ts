@@ -64,4 +64,15 @@ describe('document loaders', () => {
 
     await expect(loadRemoteDocument('https://example.test/openapi.yaml')).rejects.toThrow(/CORS or network/i)
   })
+
+  it('wraps failures while reading the remote response body as browser network failures', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      text: vi.fn().mockRejectedValue(new TypeError('Network connection lost')),
+    }))
+
+    await expect(loadRemoteDocument('https://example.test/openapi.yaml')).rejects.toThrow(/CORS or network/i)
+  })
 })

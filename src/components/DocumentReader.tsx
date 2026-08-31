@@ -14,13 +14,62 @@ function details(value: unknown): string | undefined {
   return typeof value === 'string' && value.trim() ? value : undefined
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+}
+
 function responseRows(operation: Operation) {
-  const responses = operation.definition.responses as Record<string, { description?: string }> | undefined
+  const responses = operation.definition.responses as Record<string, unknown> | undefined
   return Object.entries(responses ?? {}).map(([status, response]) => ({
     key: status,
     status,
-    description: response?.description ?? 'No description',
+    description: isRecord(response) ? details(response.description) ?? 'No description' : 'No description',
+    response,
   }))
+}
+
+function RawValue({ value }: { value: unknown }) {
+  return <pre>{JSON.stringify(value, null, 2) ?? String(value)}</pre>
+}
+
+function ResponseDetails({ response, status }: { response: unknown; status: string }) {
+  if (!isRecord(response)) {
+    return <section aria-label={`Response ${status} details`} className="response-documentation"><RawValue value={response} /></section>
+  }
+
+  const content = response.content
+  const mediaTypes = isRecord(content) ? Object.entries(content) : []
+  const additional = Object.fromEntries(Object.entries(response).filter(([name]) => !['content', 'description', 'examples', 'headers', 'schema'].includes(name)))
+
+  return (
+    <section aria-label={`Response ${status} details`} className="response-documentation">
+      {response.headers !== undefined ? <div><Typography.Title level={5}>Headers</Typography.Title><RawValue value={response.headers} /></div> : null}
+      {response.schema !== undefined ? <div><Typography.Title level={5}>Schema</Typography.Title><RawValue value={response.schema} /></div> : null}
+      {response.examples !== undefined ? <div><Typography.Title level={5}>Examples</Typography.Title><RawValue value={response.examples} /></div> : null}
+      {content !== undefined && !isRecord(content) ? <div><Typography.Title level={5}>Content</Typography.Title><RawValue value={content} /></div> : null}
+      {mediaTypes.map(([mediaType, mediaDefinition]) => {
+        if (!isRecord(mediaDefinition)) {
+          return <div className="response-media-type" key={mediaType}><Typography.Text strong>{mediaType}</Typography.Text><RawValue value={mediaDefinition} /></div>
+        }
+
+        const examples = mediaDefinition.example === undefined
+          ? mediaDefinition.examples
+          : mediaDefinition.examples === undefined
+            ? mediaDefinition.example
+            : { example: mediaDefinition.example, examples: mediaDefinition.examples }
+        const mediaAdditional = Object.fromEntries(Object.entries(mediaDefinition).filter(([name]) => !['example', 'examples', 'schema'].includes(name)))
+        return (
+          <div className="response-media-type" key={mediaType}>
+            <Typography.Text strong>{mediaType}</Typography.Text>
+            {mediaDefinition.schema !== undefined ? <div><Typography.Title level={5}>Schema</Typography.Title><RawValue value={mediaDefinition.schema} /></div> : null}
+            {examples !== undefined ? <div><Typography.Title level={5}>Examples</Typography.Title><RawValue value={examples} /></div> : null}
+            {Object.keys(mediaAdditional).length ? <RawValue value={mediaAdditional} /> : null}
+          </div>
+        )
+      })}
+      {Object.keys(additional).length ? <RawValue value={additional} /> : null}
+    </section>
+  )
 }
 
 function operationTitle(operation: Operation): string {
@@ -112,16 +161,19 @@ export default function DocumentReader({ document, operations, selectedOperation
               ) : null}
 
               {responses.length ? (
-                <Table
-                  columns={[
-                    { dataIndex: 'status', key: 'status', title: 'Response' },
-                    { dataIndex: 'description', key: 'description', title: 'Description' },
-                  ]}
-                  dataSource={responses}
-                  pagination={false}
-                  size="small"
-                  title={() => 'Responses'}
-                />
+                <section className="response-list">
+                  <Table
+                    columns={[
+                      { dataIndex: 'status', key: 'status', title: 'Response' },
+                      { dataIndex: 'description', key: 'description', title: 'Description' },
+                    ]}
+                    dataSource={responses}
+                    pagination={false}
+                    size="small"
+                    title={() => 'Responses'}
+                  />
+                  {responses.map(({ response, status }) => <ResponseDetails key={status} response={response} status={status} />)}
+                </section>
               ) : null}
               <Collapse
                 className="try-it-panel"

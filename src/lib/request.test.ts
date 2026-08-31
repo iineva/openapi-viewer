@@ -34,4 +34,51 @@ describe('request construction', () => {
       body: '{"name":"Ada"}',
     })
   })
+
+  it('resolves relative and omitted servers against the canonical remote document URL', () => {
+    const relativeServerOperation = {
+      ...operation,
+      serverUrl: '../api/v1',
+      documentUrl: 'https://docs.example.com/specifications/openapi.yaml',
+    } as Operation
+    const defaultServerOperation = {
+      ...operation,
+      serverUrl: undefined,
+      documentUrl: 'https://docs.example.com/specifications/openapi.yaml',
+    } as Operation
+    const values = { body: '', headers: {}, path: { id: '7' }, query: {} }
+
+    expect(buildRequest(relativeServerOperation, values).url).toBe('https://docs.example.com/api/v1/pets/7')
+    expect(buildRequest(defaultServerOperation, values).url).toBe('https://docs.example.com/pets/7')
+  })
+
+  it('keeps viewer-origin resolution for local documents without a canonical URL', () => {
+    expect(buildRequest({ ...operation, serverUrl: '/api' }, {
+      body: '',
+      headers: {},
+      path: { id: '7' },
+      query: {},
+    }).url).toBe(`${window.location.origin}/api/pets/7`)
+  })
+
+  it('filters blank headers and supplies the selected body media type', () => {
+    expect(buildRequest(operation, {
+      body: 'plain request',
+      bodyMediaType: 'text/plain',
+      headers: { 'Content-Type': 'application/custom', 'X-Blank': '   ', 'X-Trace': 'trace-7' },
+      path: { id: '7' },
+      query: {},
+    } as Parameters<typeof buildRequest>[1])).toMatchObject({
+      body: 'plain request',
+      headers: { 'Content-Type': 'application/custom', 'X-Trace': 'trace-7' },
+    })
+
+    expect(buildRequest(operation, {
+      body: 'plain request',
+      bodyMediaType: 'text/plain',
+      headers: {},
+      path: { id: '7' },
+      query: {},
+    } as Parameters<typeof buildRequest>[1]).headers).toEqual({ 'Content-Type': 'text/plain' })
+  })
 })

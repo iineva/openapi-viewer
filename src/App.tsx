@@ -30,7 +30,9 @@ export default function App() {
   const [url, setUrl] = useState('')
   const [historyOpen, setHistoryOpen] = useState(false)
   const [navigationOpen, setNavigationOpen] = useState(false)
-  const operations = useMemo(() => activeDocument ? getOperations(activeDocument.specification) : [], [activeDocument])
+  const operations = useMemo(() => activeDocument
+    ? getOperations(activeDocument.specification, activeDocument.record.sourceKind === 'url' ? activeDocument.record.sourceValue : undefined)
+    : [], [activeDocument])
   const compact = !screens.md
 
   const refreshHistory = useCallback(async () => {
@@ -52,7 +54,8 @@ export default function App() {
     setActiveDocument(next)
     setError(undefined)
     const hash = selectedHash()
-    setSelectedOperationKey(getOperations(next.specification).some(({ key }) => key === hash) ? hash : undefined)
+    const documentUrl = next.record.sourceKind === 'url' ? next.record.sourceValue : undefined
+    setSelectedOperationKey(getOperations(next.specification, documentUrl).some(({ key }) => key === hash) ? hash : undefined)
     await refreshHistory()
   }, [refreshHistory])
 

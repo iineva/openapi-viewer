@@ -28,6 +28,13 @@ describe('OpenAPI utilities', () => {
     }))
   })
 
+  it('carries the canonical remote document URL into extracted operations', () => {
+    expect(getOperations(sampleDocument, 'https://docs.example.com/openapi.yaml')).toContainEqual(expect.objectContaining({
+      documentUrl: 'https://docs.example.com/openapi.yaml',
+      key: 'get-/pets',
+    }))
+  })
+
   it('searches operation method, route, summary, id, and tag', () => {
     const operations = getOperations(sampleDocument)
 

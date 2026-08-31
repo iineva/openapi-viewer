@@ -38,6 +38,7 @@ export interface Operation {
   path: string
   definition: OperationDefinition
   parameters: Parameter[]
+  documentUrl?: string
   serverUrl?: string
 }
 
@@ -46,6 +47,7 @@ export interface RequestValues {
   query: Record<string, string>
   headers: Record<string, string>
   body: string
+  bodyMediaType?: string
 }
 
 export interface PreparedRequest {

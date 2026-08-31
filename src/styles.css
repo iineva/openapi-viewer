@@ -59,6 +59,11 @@ body { margin: 0; min-width: 320px; }
 .operation-heading h2 { margin: 0 !important; }
 .schema-block { margin-top: 24px; }
 .schema-block pre { background: #f6f8fa; border: 1px solid #e1e7ed; margin: 0; overflow: auto; padding: 12px; }
+.response-list { margin-top: 24px; }
+.response-documentation { border: 1px solid #e1e7ed; border-top: 0; display: grid; gap: 16px; padding: 16px; }
+.response-documentation h5 { margin: 0 0 8px; }
+.response-documentation pre { background: #f6f8fa; border: 1px solid #e1e7ed; margin: 8px 0 0; overflow: auto; padding: 12px; }
+.response-media-type { display: grid; gap: 8px; }
 .try-it-panel { margin-top: 24px; }
 .request-form { display: grid; gap: 20px; }
 .request-form > .ant-typography { margin: 0; }

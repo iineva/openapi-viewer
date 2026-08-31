@@ -32,7 +32,12 @@ export async function loadRemoteDocument(url: string): Promise<LoadResult> {
     throw new Error(`Unable to load this URL: HTTP ${response.status} ${response.statusText}`.trim())
   }
 
-  const content = await response.text()
+  let content: string
+  try {
+    content = await response.text()
+  } catch {
+    throw new Error('Unable to load this URL because of a browser CORS or network failure. The remote server must allow this browser origin.')
+  }
   const name = getRemoteName(canonicalUrl)
   return loadDocument(name, 'url', canonicalUrl, content)
 }

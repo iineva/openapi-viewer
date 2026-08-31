@@ -29,13 +29,19 @@ function groupOperations(operations: Operation[]): Group[] {
 
 export default function OperationNavigation({ operations, selectedOperationKey, onSelect }: OperationNavigationProps) {
   const [query, setQuery] = useState('')
-  const visibleOperations = useMemo(() => searchOperations(operations, query), [operations, query])
+  const [debouncedQuery, setDebouncedQuery] = useState('')
+  const visibleOperations = useMemo(() => searchOperations(operations, debouncedQuery), [operations, debouncedQuery])
   const groups = useMemo(() => groupOperations(visibleOperations), [visibleOperations])
   const [expandedKeys, setExpandedKeys] = useState<string[]>([])
 
   useEffect(() => {
     setExpandedKeys(groupOperations(operations).map(({ tag }) => `tag-${tag}`))
   }, [operations])
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => setDebouncedQuery(query), 250)
+    return () => window.clearTimeout(timeout)
+  }, [query])
 
   return (
     <nav className="operation-navigation" aria-label="API operations">
