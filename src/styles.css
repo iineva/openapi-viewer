@@ -59,6 +59,17 @@ body { margin: 0; min-width: 320px; }
 .operation-heading h2 { margin: 0 !important; }
 .schema-block { margin-top: 24px; }
 .schema-block pre { background: #f6f8fa; border: 1px solid #e1e7ed; margin: 0; overflow: auto; padding: 12px; }
+.try-it-panel { margin-top: 24px; }
+.request-form { display: grid; gap: 20px; }
+.request-form > .ant-typography { margin: 0; }
+.request-input-section h5 { margin-bottom: 8px; }
+.response-panel h4 { margin-bottom: 8px; }
+.response-panel h5 { margin: 16px 0 8px; }
+.response-panel pre { background: #f6f8fa; border: 1px solid #e1e7ed; margin: 0; overflow: auto; padding: 12px; }
+.response-headers { display: grid; gap: 6px; margin: 0; }
+.response-headers div { display: grid; gap: 12px; grid-template-columns: minmax(120px, 1fr) minmax(0, 2fr); }
+.response-headers dt { font-weight: 600; }
+.response-headers dd { margin: 0; overflow-wrap: anywhere; }
 
 @media (max-width: 767px) {
   .app-header { gap: 4px; padding: 0 12px; }

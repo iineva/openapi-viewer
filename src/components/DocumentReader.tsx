@@ -1,4 +1,6 @@
-import { Alert, Anchor, Descriptions, Divider, Empty, Space, Table, Tag, Typography } from 'antd'
+import { Alert, Anchor, Button, Collapse, Descriptions, Divider, Empty, Space, Table, Tag, Typography } from 'antd'
+import { useState } from 'react'
+import RequestDrawer from './RequestDrawer'
 import type { ApiDocument, Operation } from '../types/openapi'
 
 interface DocumentReaderProps {
@@ -26,6 +28,8 @@ function operationTitle(operation: Operation): string {
 }
 
 export default function DocumentReader({ document, operations, selectedOperationKey, onSelect }: DocumentReaderProps) {
+  const [requestOperation, setRequestOperation] = useState<Operation>()
+
   if (!document) {
     return (
       <main className="document-reader empty-reader">
@@ -119,6 +123,15 @@ export default function DocumentReader({ document, operations, selectedOperation
                   title={() => 'Responses'}
                 />
               ) : null}
+              <Collapse
+                className="try-it-panel"
+                items={[{
+                  children: <Button onClick={() => setRequestOperation(operation)} type="primary">Open request editor</Button>,
+                  key: 'try-it',
+                  label: 'Try it',
+                }]}
+                size="small"
+              />
             </article>
           )
         })}
@@ -137,6 +150,7 @@ export default function DocumentReader({ document, operations, selectedOperation
           <pre>{JSON.stringify(securitySchemes, null, 2)}</pre>
         </section>
       ) : null}
+      {requestOperation ? <RequestDrawer key={requestOperation.key} onClose={() => setRequestOperation(undefined)} open operation={requestOperation} /> : null}
     </main>
   )
 }
