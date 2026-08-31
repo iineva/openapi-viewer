@@ -54,3 +54,22 @@ export interface PreparedRequest {
   headers: Record<string, string>
   body: string
 }
+
+export type SourceKind = 'file' | 'url'
+
+export interface StoredDocument {
+  id: string
+  name: string
+  sourceKind: SourceKind
+  sourceValue: string
+  content: string
+  createdAt: string
+  lastOpenedAt: string
+}
+
+export interface LoadedDocument {
+  record: StoredDocument
+  specification: ApiDocument
+}
+
+export type LoadResult = LoadedDocument
