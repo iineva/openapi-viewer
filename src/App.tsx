@@ -1,5 +1,5 @@
-import { BookOutlined, FolderOpenOutlined, LinkOutlined, MenuOutlined } from '@ant-design/icons'
-import { Alert, Button, Drawer, Grid, Input, Layout, Modal, Space, Typography } from 'antd'
+import { BookOutlined, FolderOpenOutlined, LinkOutlined, MenuOutlined, MoreOutlined } from '@ant-design/icons'
+import { Alert, Button, Drawer, Dropdown, Grid, Input, Layout, Modal, Space, Typography } from 'antd'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import DocumentReader from './components/DocumentReader'
 import HistoryPanel from './components/HistoryPanel'
@@ -122,12 +122,28 @@ export default function App() {
           <BookOutlined className="brand-icon" />
           <Typography.Text className="app-title">OpenAPI Viewer</Typography.Text>
         </Space>
-        <Space wrap>
+        <Space className="header-actions" size="small">
           {compact ? <Button aria-label="Open document history" icon={<FolderOpenOutlined />} onClick={() => setHistoryOpen(true)} type="text" /> : null}
           {compact ? <Button aria-label="Open operation navigation" icon={<MenuOutlined />} onClick={() => setNavigationOpen(true)} type="text" /> : null}
           <input accept=".yaml,.yml,.json,application/json,application/yaml" aria-label="OpenAPI file" className="file-input" onChange={(event) => void handleFile(event.target.files?.[0])} ref={fileInput} type="file" />
-          <Button icon={<FolderOpenOutlined />} loading={isLoading} onClick={() => fileInput.current?.click()}>Open file</Button>
-          <Button icon={<LinkOutlined />} onClick={() => setUrlOpen(true)} type="primary">Load URL</Button>
+          {compact ? (
+            <Dropdown
+              menu={{
+                items: [
+                  { key: 'open-file', label: 'Open file', onClick: () => fileInput.current?.click() },
+                  { key: 'load-url', label: 'Load URL', onClick: () => setUrlOpen(true) },
+                ],
+              }}
+              trigger={['click']}
+            >
+              <Button aria-label="Open source actions" icon={<MoreOutlined />} loading={isLoading} type="text" />
+            </Dropdown>
+          ) : (
+            <>
+              <Button icon={<FolderOpenOutlined />} loading={isLoading} onClick={() => fileInput.current?.click()}>Open file</Button>
+              <Button icon={<LinkOutlined />} onClick={() => setUrlOpen(true)} type="primary">Load URL</Button>
+            </>
+          )}
         </Space>
       </Layout.Header>
       {error ? <Alert banner closable message={error} onClose={() => setError(undefined)} type="error" /> : null}

@@ -63,3 +63,23 @@ built in 2.40s
 
 - No in-app browser-control tool was available in this environment, so interactive visual smoke testing could not be performed here. Component coverage exercises the narrow drawer path; the responsive desktop layout is verified statically and by the production build.
 - Vite emitted its standard non-blocking warning that the Ant Design-inclusive main bundle is larger than 500 kB after minification (1,075.88 kB / 343.06 kB gzip). Code splitting is a later optimization, not required for Task 3 behavior.
+
+## Follow-up Fix: Narrow Header Actions
+
+Review identified that the 56px, 320px-wide header could wrap its four compact actions onto a second row. Compact mode now keeps the history and navigation drawer buttons and places `Open file` and `Load URL` in a single `Open source actions` overflow menu. The header action group does not wrap, so the reader remains below the header.
+
+### Regression Evidence
+
+- RED: the new narrow-mode test failed because the `Open source actions` button was absent while direct source buttons remained in the header.
+- GREEN: `npm test -- --run src/App.test.tsx` passes 2 tests, including source menu accessibility and the existing load/search/select workflow.
+
+### Files Changed
+
+- `src/App.tsx`
+- `src/styles.css`
+- `src/App.test.tsx`
+- `task-3-report.md`
+
+### Follow-up Commit
+
+- `fix: prevent compact header action overflow`

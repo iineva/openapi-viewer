@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import App from './App'
 
@@ -32,15 +32,26 @@ function openApiFile(): File {
 
 describe('App', () => {
   afterEach(() => {
+    cleanup()
     window.history.replaceState(null, '', '/')
     indexedDB.deleteDatabase('openapi-viewer')
   })
 
-  it('loads a local document, filters its operations, and reads the selected operation', async () => {
+  it('keeps source actions in an overflow menu on narrow screens', async () => {
     render(<App />)
 
-    expect(screen.getByRole('button', { name: /open file/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /load url/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /open source actions/i })).toBeInTheDocument()
+    expect(screen.queryByText(/^open file$/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/^load url$/i)).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: /open source actions/i }))
+
+    expect(await screen.findByRole('menuitem', { name: 'Open file' })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: 'Load URL' })).toBeInTheDocument()
+  })
+
+  it('loads a local document, filters its operations, and reads the selected operation', async () => {
+    render(<App />)
 
     fireEvent.change(screen.getByLabelText(/openapi file/i), { target: { files: [openApiFile()] } })
 
