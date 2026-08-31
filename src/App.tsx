@@ -14,6 +14,29 @@ interface ActiveDocument {
   specification: ApiDocument
 }
 
+const PANEL_WIDTHS_KEY = 'openapi-viewer:panel-widths'
+const DEFAULT_PANEL_WIDTHS = { history: 224, navigation: 272 }
+
+type PanelName = keyof typeof DEFAULT_PANEL_WIDTHS
+type PanelWidths = typeof DEFAULT_PANEL_WIDTHS
+
+function storedPanelWidths(): PanelWidths {
+  try {
+    const stored = JSON.parse(window.localStorage.getItem(PANEL_WIDTHS_KEY) ?? '{}') as Partial<PanelWidths>
+    return {
+      history: typeof stored.history === 'number' ? stored.history : DEFAULT_PANEL_WIDTHS.history,
+      navigation: typeof stored.navigation === 'number' ? stored.navigation : DEFAULT_PANEL_WIDTHS.navigation,
+    }
+  } catch {
+    return DEFAULT_PANEL_WIDTHS
+  }
+}
+
+function constrainWidth(panel: PanelName, width: number): number {
+  const [minimum, maximum] = panel === 'history' ? [180, 360] : [220, 480]
+  return Math.min(maximum, Math.max(minimum, width))
+}
+
 function selectedHash(): string | undefined {
   return window.location.hash.slice(1) || undefined
 }
@@ -30,6 +53,7 @@ export default function App() {
   const [url, setUrl] = useState('')
   const [historyOpen, setHistoryOpen] = useState(false)
   const [navigationOpen, setNavigationOpen] = useState(false)
+  const [panelWidths, setPanelWidths] = useState<PanelWidths>(storedPanelWidths)
   const operations = useMemo(() => activeDocument
     ? getOperations(activeDocument.specification, activeDocument.record.sourceKind === 'url' ? activeDocument.record.sourceValue : undefined)
     : [], [activeDocument])
@@ -55,7 +79,8 @@ export default function App() {
     setError(undefined)
     const hash = selectedHash()
     const documentUrl = next.record.sourceKind === 'url' ? next.record.sourceValue : undefined
-    setSelectedOperationKey(getOperations(next.specification, documentUrl).some(({ key }) => key === hash) ? hash : undefined)
+    const nextOperations = getOperations(next.specification, documentUrl)
+    setSelectedOperationKey(nextOperations.some(({ key }) => key === hash) ? hash : nextOperations[0]?.key)
     await refreshHistory()
   }, [refreshHistory])
 
@@ -115,6 +140,24 @@ export default function App() {
     setHistory([])
   }
 
+  const startResize = (panel: PanelName, event: React.PointerEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    const startX = event.clientX
+    const startWidth = panelWidths[panel]
+    let nextWidth = startWidth
+    const onMove = (moveEvent: PointerEvent) => {
+      nextWidth = constrainWidth(panel, startWidth + moveEvent.clientX - startX)
+      setPanelWidths((current) => ({ ...current, [panel]: nextWidth }))
+    }
+    const onEnd = () => {
+      window.localStorage.setItem(PANEL_WIDTHS_KEY, JSON.stringify({ ...panelWidths, [panel]: nextWidth }))
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onEnd)
+    }
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onEnd)
+  }
+
   const historyPanel = <HistoryPanel activeDocumentId={activeDocument?.record.id} documents={history} onClear={() => void handleClear()} onOpen={(record) => void handleHistoryOpen(record)} onRemove={(id) => void handleRemove(id)} />
   const operationNavigation = <OperationNavigation onSelect={handleSelect} operations={operations} selectedOperationKey={selectedOperationKey} />
 
@@ -150,10 +193,12 @@ export default function App() {
         </Space>
       </Layout.Header>
       {error ? <Alert banner closable message={error} onClose={() => setError(undefined)} type="error" /> : null}
-      <Layout className="viewer-layout" hasSider={!compact}>
-        {!compact ? <Layout.Sider className="history-rail" theme="light" width={224}>{historyPanel}</Layout.Sider> : null}
-        {!compact ? <Layout.Sider className="navigation-rail" theme="light" width={272}>{operationNavigation}</Layout.Sider> : null}
-        <Layout.Content className="reader-content"><DocumentReader document={activeDocument?.specification} onSelect={handleSelect} operations={operations} selectedOperationKey={selectedOperationKey} /></Layout.Content>
+      <Layout className="viewer-layout">
+        {!compact ? <aside className="history-rail" style={{ width: panelWidths.history }}>{historyPanel}</aside> : null}
+        {!compact ? <div aria-label="Resize history panel" className="panel-resizer" onPointerDown={(event) => startResize('history', event)} role="separator" /> : null}
+        {!compact ? <aside className="navigation-rail" style={{ width: panelWidths.navigation }}>{operationNavigation}</aside> : null}
+        {!compact ? <div aria-label="Resize endpoint panel" className="panel-resizer" onPointerDown={(event) => startResize('navigation', event)} role="separator" /> : null}
+        <Layout.Content className="reader-content"><DocumentReader document={activeDocument?.specification} operations={operations} selectedOperationKey={selectedOperationKey} /></Layout.Content>
       </Layout>
       <Drawer onClose={() => setHistoryOpen(false)} open={historyOpen} size="default" title="Document history">{historyPanel}</Drawer>
       <Drawer onClose={() => setNavigationOpen(false)} open={navigationOpen} size="default" title="API operations">{operationNavigation}</Drawer>

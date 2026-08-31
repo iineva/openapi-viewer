@@ -28,6 +28,13 @@ describe('OperationNavigation', () => {
     expect(screen.getByText('/pets')).toBeInTheDocument()
   })
 
+  it('shows each operation summary below its route', () => {
+    render(<OperationNavigation onSelect={() => undefined} operations={operations} />)
+
+    expect(screen.getByText('List pets')).toBeInTheDocument()
+    expect(screen.getByText('List users')).toBeInTheDocument()
+  })
+
   it('keeps a long route readable without expanding the navigation item', () => {
     const longPath = '/bagan-api/member/v2/getMembersPersonalizationFilled/with-a-long-resource-name'
     const longOperation: Operation = {

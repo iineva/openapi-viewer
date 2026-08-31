@@ -27,6 +27,11 @@ function groupOperations(operations: Operation[]): Group[] {
   return [...grouped.entries()].map(([tag, taggedOperations]) => ({ tag, operations: taggedOperations }))
 }
 
+function operationDescription(operation: Operation): string | undefined {
+  const value = operation.definition.summary ?? operation.definition.description
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined
+}
+
 export default function OperationNavigation({ operations, selectedOperationKey, onSelect }: OperationNavigationProps) {
   const [query, setQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
@@ -73,7 +78,10 @@ export default function OperationNavigation({ operations, selectedOperationKey, 
                   type="text"
                 >
                   <span className={`method method-${operation.method}`}>{operation.method.toUpperCase()}</span>
-                  <span className="operation-path" title={operation.path}>{operation.path}</span>
+                  <span className="operation-item-copy">
+                    <span className="operation-path" title={operation.path}>{operation.path}</span>
+                    {operationDescription(operation) ? <span className="operation-description" title={operationDescription(operation)}>{operationDescription(operation)}</span> : null}
+                  </span>
                 </Button>
               ),
             })),

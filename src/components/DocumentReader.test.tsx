@@ -10,6 +10,21 @@ const document: ApiDocument = {
 
 const operation: Operation = {
   definition: {
+    requestBody: {
+      content: {
+        'application/json': {
+          example: { displayName: 'Ada' },
+          schema: {
+            properties: {
+              displayName: { description: 'Public profile name', type: 'string' },
+            },
+            required: ['displayName'],
+            type: 'object',
+          },
+        },
+      },
+      description: 'Member profile payload',
+    },
     responses: {
       '200': {
         content: {
@@ -38,18 +53,22 @@ const operation: Operation = {
 }
 
 describe('DocumentReader', () => {
-  it('renders response media types, schemas, headers, examples, and unknown shapes', () => {
-    render(<DocumentReader document={document} onSelect={() => undefined} operations={[operation]} />)
+  it('renders request and response schemas as readable fields and examples', () => {
+    render(<DocumentReader document={document} operations={[operation]} selectedOperationKey={operation.key} />)
 
     const details = screen.getByRole('region', { name: 'Response 200 details' })
     expect(within(details).getByText('application/json')).toBeInTheDocument()
     expect(within(details).getByText('text/plain')).toBeInTheDocument()
     expect(within(details).getByText('application/x-custom')).toBeInTheDocument()
     expect(within(details).getByText('Headers')).toBeInTheDocument()
-    expect(within(details).getAllByText('Schema')).toHaveLength(2)
+    expect(within(details).getAllByText('Fields')).toHaveLength(1)
     expect(within(details).getAllByText('Examples')).toHaveLength(2)
     expect(details).toHaveTextContent('X-Rate-Limit')
+    expect(details).toHaveTextContent('id')
     expect(details).toHaveTextContent('Named pet')
-    expect(details).toHaveTextContent('opaque-response-shape')
+    expect(screen.getByText('Member profile payload')).toBeInTheDocument()
+    expect(screen.getByText('displayName')).toBeInTheDocument()
+    expect(screen.getByText('Public profile name')).toBeInTheDocument()
+    expect(screen.queryByText('properties')).not.toBeInTheDocument()
   })
 })

@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 
 const PETS_DOCUMENT = `openapi: 3.1.0
@@ -35,6 +35,7 @@ describe('App', () => {
     cleanup()
     window.history.replaceState(null, '', '/')
     indexedDB.deleteDatabase('openapi-viewer')
+    window.localStorage.clear()
   })
 
   it('keeps source actions in an overflow menu on narrow screens', async () => {
@@ -68,6 +69,30 @@ describe('App', () => {
     fireEvent.click(petsOperation!)
 
     expect(await screen.findByRole('heading', { name: 'GET /pets' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'GET /users' })).not.toBeInTheDocument()
     expect(window.location.hash).toBe('#get-/pets')
+  })
+
+  it('persists a resized desktop endpoint panel', () => {
+    const previousMatchMedia = window.matchMedia
+    window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+      addEventListener: () => undefined,
+      addListener: () => undefined,
+      dispatchEvent: () => false,
+      matches: query.includes('min-width'),
+      media: query,
+      onchange: null,
+      removeEventListener: () => undefined,
+      removeListener: () => undefined,
+    }))
+
+    render(<App />)
+    const separator = screen.getByRole('separator', { name: 'Resize endpoint panel' })
+    fireEvent.pointerDown(separator, { clientX: 500 })
+    fireEvent.pointerMove(window, { clientX: 560 })
+    fireEvent.pointerUp(window)
+
+    expect(JSON.parse(window.localStorage.getItem('openapi-viewer:panel-widths') ?? '{}')).toMatchObject({ navigation: 332 })
+    window.matchMedia = previousMatchMedia
   })
 })
