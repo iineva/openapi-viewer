@@ -193,13 +193,13 @@ export default function App() {
         </Space>
       </Layout.Header>
       {error ? <Alert banner closable message={error} onClose={() => setError(undefined)} type="error" /> : null}
-      <Layout className="viewer-layout">
+      <div aria-label="Viewer panes" className="viewer-layout">
         {!compact ? <aside className="history-rail" style={{ width: panelWidths.history }}>{historyPanel}</aside> : null}
         {!compact ? <div aria-label="Resize history panel" className="panel-resizer" onPointerDown={(event) => startResize('history', event)} role="separator" /> : null}
         {!compact ? <aside className="navigation-rail" style={{ width: panelWidths.navigation }}>{operationNavigation}</aside> : null}
         {!compact ? <div aria-label="Resize endpoint panel" className="panel-resizer" onPointerDown={(event) => startResize('navigation', event)} role="separator" /> : null}
-        <Layout.Content className="reader-content"><DocumentReader document={activeDocument?.specification} operations={operations} selectedOperationKey={selectedOperationKey} /></Layout.Content>
-      </Layout>
+        <section className="reader-content"><DocumentReader document={activeDocument?.specification} operations={operations} selectedOperationKey={selectedOperationKey} /></section>
+      </div>
       <Drawer onClose={() => setHistoryOpen(false)} open={historyOpen} size="default" title="Document history">{historyPanel}</Drawer>
       <Drawer onClose={() => setNavigationOpen(false)} open={navigationOpen} size="default" title="API operations">{operationNavigation}</Drawer>
       <Modal

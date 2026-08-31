@@ -87,6 +87,7 @@ describe('App', () => {
     }))
 
     render(<App />)
+    expect(screen.getByLabelText('Viewer panes')).not.toHaveClass('ant-layout')
     const separator = screen.getByRole('separator', { name: 'Resize endpoint panel' })
     fireEvent.pointerDown(separator, { clientX: 500 })
     fireEvent.pointerMove(window, { clientX: 560 })
