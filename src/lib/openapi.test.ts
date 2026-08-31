@@ -1,0 +1,38 @@
+import { describe, expect, it } from 'vitest'
+import { getOperations, parseSpecification, searchOperations } from './openapi'
+import type { ApiDocument } from '../types/openapi'
+
+const sampleDocument: ApiDocument = {
+  openapi: '3.1.0',
+  info: { title: 'Pet API', version: '1.0.0' },
+  servers: [{ url: 'https://api.example.com' }],
+  paths: {
+    '/pets': {
+      get: { summary: 'List pets', tags: ['pets'] },
+      post: { operationId: 'createPet', tags: ['pets'] },
+    },
+  },
+}
+
+describe('OpenAPI utilities', () => {
+  it('parses YAML into an API document', async () => {
+    await expect(parseSpecification(`openapi: 3.1.0\ninfo:\n  title: Pet API\n  version: 1.0.0\npaths: {}`))
+      .resolves.toMatchObject({ openapi: '3.1.0', info: { title: 'Pet API' } })
+  })
+
+  it('extracts supported operations with stable keys and inherited server details', () => {
+    expect(getOperations(sampleDocument)).toContainEqual(expect.objectContaining({
+      key: 'get-/pets',
+      method: 'get',
+      serverUrl: 'https://api.example.com',
+    }))
+  })
+
+  it('searches operation method, route, summary, id, and tag', () => {
+    const operations = getOperations(sampleDocument)
+
+    expect(searchOperations(operations, 'createpet')).toHaveLength(1)
+    expect(searchOperations(operations, 'PETS')).toHaveLength(2)
+    expect(searchOperations(operations, 'GET')).toHaveLength(1)
+  })
+})
