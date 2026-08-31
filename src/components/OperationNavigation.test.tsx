@@ -32,6 +32,7 @@ describe('OperationNavigation', () => {
     render(<OperationNavigation onSelect={() => undefined} operations={operations} />)
 
     expect(screen.getByRole('button', { name: 'pets' })).toBeInTheDocument()
+    expect(screen.getByTitle('/pets').previousElementSibling).toHaveClass('method')
     expect(screen.getByText('List pets')).toBeInTheDocument()
     expect(screen.getByText('List users')).toBeInTheDocument()
   })

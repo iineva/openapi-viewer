@@ -75,10 +75,8 @@ export default function OperationNavigation({ operations, selectedOperationKey, 
                   type="text"
                 >
                   <span className={`method method-${operation.method}`}>{operation.method.toUpperCase()}</span>
-                  <span className="operation-item-copy">
-                    <span className="operation-path" title={operation.path}>{operation.path}</span>
-                    {operationDescription(operation) ? <span className="operation-description" title={operationDescription(operation)}>{operationDescription(operation)}</span> : null}
-                  </span>
+                  <span className="operation-path" title={operation.path}>{operation.path}</span>
+                  {operationDescription(operation) ? <span className="operation-description" title={operationDescription(operation)}>{operationDescription(operation)}</span> : null}
                 </Button>
             )),
           }))}
