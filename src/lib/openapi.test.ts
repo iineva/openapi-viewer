@@ -20,6 +20,29 @@ describe('OpenAPI utilities', () => {
       .resolves.toMatchObject({ openapi: '3.1.0', info: { title: 'Pet API' } })
   })
 
+  it('preserves component references so Proto schema names remain available', async () => {
+    const document = await parseSpecification(`openapi: 3.1.0
+info: { title: Gateway, version: 1.0.0 }
+paths:
+  /messages:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/gateway.v1.MsgBodyItem'
+components:
+  schemas:
+    gateway.v1.MsgBodyItem:
+      type: object
+      properties:
+        text: { type: string }
+`)
+
+    const schema = (document.paths?.['/messages']?.post?.requestBody as { content?: Record<string, { schema?: unknown }> })?.content?.['application/json']?.schema
+    expect(schema).toEqual({ $ref: '#/components/schemas/gateway.v1.MsgBodyItem' })
+  })
+
   it('extracts supported operations with stable keys and inherited server details', () => {
     expect(getOperations(sampleDocument)).toContainEqual(expect.objectContaining({
       key: 'get-/pets',
@@ -70,5 +93,48 @@ describe('OpenAPI utilities', () => {
     expect(searchOperations(operations, 'tenant routing')).toHaveLength(1)
     expect(searchOperations(operations, 'public profile')).toHaveLength(1)
     expect(searchOperations(operations, 'displayname')).toHaveLength(1)
+  })
+
+  it('searches referenced Schema class names and nested field names', () => {
+    const schemas = {
+      'gateway.v1.MemberProfile': {
+        properties: { contact: { $ref: '#/components/schemas/gateway.v1.Contact' } },
+        type: 'object',
+      },
+      'gateway.v1.Contact': {
+        properties: { preferredNickname: { description: '昵称', type: 'string' } },
+        type: 'object',
+      },
+    }
+    const operations = getOperations({
+      ...sampleDocument,
+      components: { schemas },
+      paths: {
+        '/members': {
+          get: {
+            responses: {
+              '200': { content: { 'application/json': { schema: { $ref: '#/components/schemas/gateway.v1.MemberProfile' } } } },
+            },
+          },
+        },
+      },
+    })
+    expect(searchOperations(operations, 'memberprofile', schemas)).toHaveLength(1)
+    expect(searchOperations(operations, 'preferrednickname', schemas)).toHaveLength(1)
+  })
+
+  it('searches Chinese operation text by full pinyin and initials', () => {
+    const operations = getOperations({
+      ...sampleDocument,
+      paths: {
+        '/members/profile': {
+          get: { description: '获取用户的完整资料', summary: '查询会员信息' },
+        },
+      },
+    })
+
+    expect(searchOperations(operations, 'chaxunhuiyuanxinxi')).toHaveLength(1)
+    expect(searchOperations(operations, 'cxhyxx')).toHaveLength(1)
+    expect(searchOperations(operations, 'huoquyonghu')).toHaveLength(1)
   })
 })

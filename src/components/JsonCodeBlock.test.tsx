@@ -9,3 +9,12 @@ it('renders JSON values with Prism syntax tokens', () => {
   expect(screen.getByLabelText('JSON content').querySelector('.token.number')).toHaveTextContent('2')
   expect(screen.getByLabelText('JSON content').querySelector('.token.string')).toHaveTextContent('"Ada"')
 })
+
+it('renders circular values without throwing', () => {
+  const value: { self?: unknown } = {}
+  value.self = value
+
+  render(<JsonCodeBlock value={value} />)
+
+  expect(screen.getAllByLabelText('JSON content').at(-1)).toHaveTextContent('[Circular]')
+})

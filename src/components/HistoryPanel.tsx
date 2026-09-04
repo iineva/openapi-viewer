@@ -57,7 +57,7 @@ export default function HistoryPanel({ documents, activeDocumentId, onOpen, onRe
         <Empty description="No saved documents" image={Empty.PRESENTED_IMAGE_SIMPLE} />
       )}
       <Space className="history-source-note" direction="vertical" size={2}>
-        <Typography.Text type="secondary">Saved in this browser</Typography.Text>
+        <Typography.Text type="secondary">Browser history</Typography.Text>
       </Space>
     </section>
   )

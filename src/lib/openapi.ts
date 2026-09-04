@@ -1,7 +1,10 @@
 import { dereference, upgrade } from '@scalar/openapi-parser'
+import Pinyin from 'tiny-pinyin'
 import type { ApiDocument, HttpMethod, Operation, OperationDefinition, Parameter, PathItem } from '../types/openapi'
 
 const HTTP_METHODS: HttpMethod[] = ['get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace']
+const HAN_CHARACTERS = /[\u3400-\u9fff]/
+const PINYIN_VARIANTS = new Map<string, string[]>()
 
 export async function parseSpecification(content: string): Promise<ApiDocument> {
   if (!content.trim()) {
@@ -15,7 +18,9 @@ export async function parseSpecification(content: string): Promise<ApiDocument> 
     throw new Error(result.errors.map(({ message }) => message).join('; '))
   }
 
-  return (result.schema ?? result.specification ?? upgraded) as ApiDocument
+  // Dereferencing validates the whole document, but returning it would erase
+  // component $ref names that identify generated Proto message types.
+  return upgraded
 }
 
 export function getOperations(document: ApiDocument, documentUrl?: string): Operation[] {
@@ -43,7 +48,7 @@ export function getOperations(document: ApiDocument, documentUrl?: string): Oper
   })
 }
 
-export function searchOperations(operations: Operation[], term: string): Operation[] {
+export function searchOperations(operations: Operation[], term: string, schemas?: Record<string, unknown>): Operation[] {
   const query = term.trim().toLocaleLowerCase()
   if (!query) {
     return operations
@@ -57,7 +62,21 @@ export function searchOperations(operations: Operation[], term: string): Operati
     ...(operation.definition.tags ?? []),
     ...collectSearchTerms(operation.parameters),
     ...collectSearchTerms(operation.definition),
-  ].some((value) => value?.toLocaleLowerCase().includes(query)))
+    ...collectReferencedSchemaTerms(operation.definition, schemas),
+  ].some((value) => matchesSearch(value, query)))
+}
+
+function matchesSearch(value: string | undefined, query: string): boolean {
+  if (!value) return false
+  const normalized = value.toLocaleLowerCase()
+  if (normalized.includes(query) || !HAN_CHARACTERS.test(value)) return normalized.includes(query)
+
+  const variants = PINYIN_VARIANTS.get(value) ?? [
+    Pinyin.parse(value).map(({ target }) => target[0]).join('').toLocaleLowerCase(),
+    Pinyin.convertToPinyin(value, '', true),
+  ]
+  PINYIN_VARIANTS.set(value, variants)
+  return variants.some((variant) => variant.includes(query))
 }
 
 function collectSearchTerms(value: unknown, seen = new WeakSet<object>()): string[] {
@@ -73,6 +92,23 @@ function collectSearchTerms(value: unknown, seen = new WeakSet<object>()): strin
   seen.add(value)
 
   return Object.entries(value).flatMap(([key, nested]) => [key, ...collectSearchTerms(nested, seen)])
+}
+
+function collectReferencedSchemaTerms(value: unknown, schemas?: Record<string, unknown>, seenReferences = new Set<string>(), seenValues = new WeakSet<object>()): string[] {
+  if (!value || typeof value !== 'object' || seenValues.has(value)) return []
+  seenValues.add(value)
+
+  const record = value as Record<string, unknown>
+  const reference = typeof record.$ref === 'string' ? record.$ref.match(/^#\/components\/schemas\/(.+)$/)?.[1] : undefined
+  const resolved = reference && !seenReferences.has(reference) ? schemas?.[reference] : undefined
+  if (reference) seenReferences.add(reference)
+
+  return [
+    ...(reference ? [reference] : []),
+    ...(resolved === undefined ? [] : collectSearchTerms(resolved)),
+    ...(resolved === undefined ? [] : collectReferencedSchemaTerms(resolved, schemas, seenReferences, seenValues)),
+    ...Object.values(record).flatMap((nested) => collectReferencedSchemaTerms(nested, schemas, seenReferences, seenValues)),
+  ]
 }
 
 function mergeParameters(pathParameters?: Parameter[], operationParameters?: Parameter[]): Parameter[] {

@@ -6,7 +6,14 @@ interface JsonCodeBlockProps {
 }
 
 function stringify(value: unknown): string {
-  const content = JSON.stringify(value, null, 2)
+  const seen = new WeakSet<object>()
+  const content = JSON.stringify(value, (_key, nestedValue) => {
+    if (nestedValue && typeof nestedValue === 'object') {
+      if (seen.has(nestedValue)) return '[Circular]'
+      seen.add(nestedValue)
+    }
+    return nestedValue
+  }, 2)
   return content === undefined ? String(value) : content
 }
 

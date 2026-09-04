@@ -1,0 +1,8 @@
+.git
+.env
+.superpowers
+node_modules
+dist
+coverage
+openapi-viewer
+*.log

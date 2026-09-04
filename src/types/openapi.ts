@@ -57,7 +57,7 @@ export interface PreparedRequest {
   body: string
 }
 
-export type SourceKind = 'file' | 'url'
+export type SourceKind = 'file' | 'url' | 'gitlab'
 
 export interface StoredDocument {
   id: string
