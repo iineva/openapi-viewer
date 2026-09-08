@@ -3,3 +3,5 @@ dist/
 coverage/
 .env
 openapi-viewer
+src/openapi/*
+!src/openapi/.gitkeep

@@ -15,7 +15,8 @@ type Config struct {
 	GitLabClientSecret string
 	GitLabRedirectURL  string
 	SessionSecret      string
-	StaticDir          string
+	DevOpenAPIDir      string
+	LocalOpenAPIFile   string
 	CookieSecure       bool
 }
 
@@ -28,7 +29,8 @@ func Load() (Config, error) {
 		GitLabClientSecret: os.Getenv("GITLAB_CLIENT_SECRET"),
 		GitLabRedirectURL:  os.Getenv("GITLAB_REDIRECT_URL"),
 		SessionSecret:      os.Getenv("SESSION_SECRET"),
-		StaticDir:          value("STATIC_DIR", "./dist"),
+		DevOpenAPIDir:      strings.TrimSpace(os.Getenv("DEV_OPENAPI_DIR")),
+		LocalOpenAPIFile:   strings.TrimSpace(os.Getenv("LOCAL_OPENAPI_FILE")),
 	}
 	secure, err := strconv.ParseBool(value("COOKIE_SECURE", "false"))
 	if err != nil {

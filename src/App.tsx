@@ -4,12 +4,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import DocumentReader from './components/DocumentReader'
 import GitLabDocumentsPanel from './components/GitLabDocumentsPanel'
 import HistoryPanel from './components/HistoryPanel'
+import LocalDocumentsPanel from './components/LocalDocumentsPanel'
 import OperationNavigation from './components/OperationNavigation'
 import { loadFileDocument, loadRemoteDocument } from './lib/documents'
 import { getOperations, parseSpecification } from './lib/openapi'
 import { documentRepository } from './lib/repository'
 import { gitLabBranches, gitLabFileContent, gitLabProjects, gitLabSession, scanGitLabOpenAPIFiles } from './lib/gitlab'
+import { defaultLocalOpenAPI, localOpenAPIFileContent, localOpenAPIFiles } from './lib/localOpenapi'
 import type { GitLabBranch, GitLabOpenAPIFile, GitLabProject, GitLabUser } from './lib/gitlab'
+import type { LocalOpenAPIFile } from './lib/localOpenapi'
 import type { ApiDocument, Operation, StoredDocument } from './types/openapi'
 
 interface ActiveDocument {
@@ -91,6 +94,8 @@ export default function App() {
   const [gitLabBranchList, setGitLabBranchList] = useState<GitLabBranch[]>([])
   const [gitLabSelection, setGitLabSelection] = useState<GitLabSelection>()
   const [gitLabFiles, setGitLabFiles] = useState<GitLabOpenAPIFile[]>([])
+  const [localFiles, setLocalFiles] = useState<LocalOpenAPIFile[]>([])
+  const [activeLocalPath, setActiveLocalPath] = useState<string>()
   const [selectedGitLabProjectID, setSelectedGitLabProjectID] = useState<number>()
   const [selectedGitLabRef, setSelectedGitLabRef] = useState('')
   const operations = useMemo(() => activeDocument
@@ -193,6 +198,63 @@ export default function App() {
       setIsLoading(false)
     }
   }, [activate, gitLabUser])
+
+  const openLocalFile = useCallback(async (file: LocalOpenAPIFile) => {
+    setIsLoading(true)
+    try {
+      const content = await localOpenAPIFileContent(file.path)
+      const specification = await parseSpecification(content)
+      const now = new Date().toISOString()
+      await activate({
+        record: {
+          content,
+          createdAt: now,
+          id: `local-${file.path}`,
+          lastOpenedAt: now,
+          name: file.path,
+          sourceKind: 'local',
+          sourceValue: `local://${file.path}`,
+        },
+        specification,
+      })
+      setActiveLocalPath(file.path)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Unable to load this local OpenAPI document.')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [activate])
+
+  useEffect(() => {
+    let mounted = true
+    const loadDevelopmentDocuments = async () => {
+      try {
+        const [files, configured] = await Promise.all([localOpenAPIFiles(), defaultLocalOpenAPI()])
+        if (!mounted) return
+        setLocalFiles(files)
+        if (!configured) return
+        const specification = await parseSpecification(configured.content)
+        if (!mounted) return
+        const now = new Date().toISOString()
+        await activate({
+          record: {
+            content: configured.content,
+            createdAt: now,
+            id: `local-default-${configured.name}`,
+            lastOpenedAt: now,
+            name: configured.name,
+            sourceKind: 'local',
+            sourceValue: `local://${configured.name}`,
+          },
+          specification,
+        })
+      } catch (cause) {
+        if (mounted) setError(cause instanceof Error ? cause.message : 'Unable to load the configured local OpenAPI document.')
+      }
+    }
+    void loadDevelopmentDocuments()
+    return () => { mounted = false }
+  }, [activate])
 
   const scanGitLabRepository = useCallback(async (selection: GitLabSelection) => {
     setIsLoading(true)
@@ -336,6 +398,7 @@ export default function App() {
   }
 
   const historyPanel = <HistoryPanel activeDocumentId={activeDocument?.record.id} documents={history} onClear={() => void handleClear()} onOpen={(record) => void handleHistoryOpen(record)} onRemove={(id) => void handleRemove(id)} />
+  const localPanel = <LocalDocumentsPanel activePath={activeLocalPath} files={localFiles} onOpen={(file) => void openLocalFile(file)} />
   const gitLabPanel = <GitLabDocumentsPanel activePath={gitLabSelection?.filePath} files={gitLabFiles} onOpen={(file) => gitLabSelection && void openGitLabFile(gitLabSelection, file)} projectName={gitLabSelection?.projectName} refName={gitLabSelection?.ref} />
   const operationNavigation = <OperationNavigation onSelect={handleSelect} operations={operations} schemas={schemas} selectedOperationKey={selectedOperationKey} />
 
@@ -373,7 +436,7 @@ export default function App() {
       </Layout.Header>
       {error ? <Alert banner closable message={error} onClose={() => setError(undefined)} type="error" /> : null}
       <div aria-label="Viewer panes" className="viewer-layout">
-        {!compact && !historyCollapsed ? <aside className="history-rail" style={{ width: panelWidths.history }}>{gitLabPanel}{historyPanel}</aside> : null}
+        {!compact && !historyCollapsed ? <aside className="history-rail" style={{ width: panelWidths.history }}>{localPanel}{gitLabPanel}{historyPanel}</aside> : null}
         {!compact ? (
           <div className="history-toggle">
             <Tooltip title={historyCollapsed ? 'Expand history' : 'Collapse history'}>
@@ -392,7 +455,7 @@ export default function App() {
         {!compact ? <div aria-label="Resize endpoint panel" className="panel-resizer" onPointerDown={(event) => startResize('navigation', event)} role="separator" /> : null}
         <section className="reader-content"><DocumentReader document={activeDocument?.specification} operations={operations} selectedOperationKey={selectedOperationKey} /></section>
       </div>
-      <Drawer onClose={() => setHistoryOpen(false)} open={historyOpen} size="default" title="Document history">{gitLabPanel}{historyPanel}</Drawer>
+      <Drawer onClose={() => setHistoryOpen(false)} open={historyOpen} size="default" title="Document history">{localPanel}{gitLabPanel}{historyPanel}</Drawer>
       <Drawer onClose={() => setNavigationOpen(false)} open={navigationOpen} size="default" title="API operations">{operationNavigation}</Drawer>
       <Drawer onClose={() => setGitLabSettingsOpen(false)} open={gitLabSettingsOpen} size="default" title="GitLab repository">
         <Space direction="vertical" size="middle" style={{ width: '100%' }}>

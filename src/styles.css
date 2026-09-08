@@ -34,7 +34,7 @@ body { margin: 0; min-width: 320px; }
 .panel-resizer { background: #eef1f4; cursor: col-resize; flex: 0 0 5px; outline: 0; transition: background 120ms ease; }
 .panel-resizer:hover, .panel-resizer:focus-visible { background: #1677ff; }
 .history-panel, .operation-navigation { padding: 12px; }
-.gitlab-documents-panel { border-bottom: 1px solid #dfe4ea; padding: 12px; }
+.gitlab-documents-panel, .local-documents-panel { border-bottom: 1px solid #dfe4ea; padding: 12px; }
 .gitlab-project-name { display: block; font-size: 12px; margin: -4px 0 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .gitlab-file-link { align-items: flex-start; display: grid; grid-template-columns: 16px minmax(0, 1fr); height: auto; padding: 4px 0 !important; text-align: left; width: 100%; }
 .gitlab-file-link > span { overflow-wrap: anywhere; }

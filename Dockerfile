@@ -18,11 +18,11 @@ RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags='-s -w' -o /out/openapi
 
 FROM gcr.io/distroless/static-debian12:nonroot
 
+WORKDIR /app
 COPY --from=server-build /out/openapi-viewer /openapi-viewer
 COPY --from=frontend-build /workspace/dist /app/dist
 
 ENV LISTEN_ADDR=:8080
-ENV STATIC_DIR=/app/dist
 
 EXPOSE 8080
 ENTRYPOINT ["/openapi-viewer"]

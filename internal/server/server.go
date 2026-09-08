@@ -21,6 +21,7 @@ import (
 )
 
 const oauthStateCookieName = "openapi_viewer_oauth_state"
+const staticDir = "./dist"
 
 type Server struct {
 	config   config.Config
@@ -59,6 +60,9 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /api/gitlab/projects/{projectID}/refs", s.branches)
 	mux.HandleFunc("POST /api/gitlab/projects/{projectID}/scan", s.scan)
 	mux.HandleFunc("GET /api/gitlab/projects/{projectID}/file", s.file)
+	mux.HandleFunc("GET /api/dev/openapi-files", s.localOpenAPIFiles)
+	mux.HandleFunc("GET /api/dev/openapi-file", s.localOpenAPIFile)
+	mux.HandleFunc("GET /api/dev/openapi-default", s.localOpenAPIDefault)
 	return s.staticHandler(mux)
 }
 
@@ -241,20 +245,20 @@ func (s *Server) setCookie(w http.ResponseWriter, name, value string, maxAge int
 }
 
 func (s *Server) staticHandler(api http.Handler) http.Handler {
-	files := http.FileServer(http.Dir(s.config.StaticDir))
+	files := http.FileServer(http.Dir(staticDir))
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasPrefix(r.URL.Path, "/api/") {
 			api.ServeHTTP(w, r)
 			return
 		}
-		requested := filepath.Join(s.config.StaticDir, filepath.Clean(r.URL.Path))
+		requested := filepath.Join(staticDir, filepath.Clean(r.URL.Path))
 		if r.URL.Path != "/" {
 			if info, err := os.Stat(requested); err == nil && !info.IsDir() {
 				files.ServeHTTP(w, r)
 				return
 			}
 		}
-		index, err := os.ReadFile(filepath.Join(s.config.StaticDir, "index.html"))
+		index, err := os.ReadFile(filepath.Join(staticDir, "index.html"))
 		if errors.Is(err, fs.ErrNotExist) {
 			writeError(w, http.StatusServiceUnavailable, "frontend assets are not built")
 			return
