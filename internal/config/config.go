@@ -29,7 +29,7 @@ func Load() (Config, error) {
 		GitLabClientSecret: os.Getenv("GITLAB_CLIENT_SECRET"),
 		GitLabRedirectURL:  os.Getenv("GITLAB_REDIRECT_URL"),
 		SessionSecret:      os.Getenv("SESSION_SECRET"),
-		DevOpenAPIDir:      strings.TrimSpace(os.Getenv("DEV_OPENAPI_DIR")),
+		DevOpenAPIDir:      strings.TrimSpace(value("DEV_OPENAPI_DIR", "./src/openapi")),
 		LocalOpenAPIFile:   strings.TrimSpace(os.Getenv("LOCAL_OPENAPI_FILE")),
 	}
 	secure, err := strconv.ParseBool(value("COOKIE_SECURE", "false"))
